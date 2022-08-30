@@ -30,8 +30,8 @@ public class InstituteService {
 	@Autowired
 	private ScholarshipDocumentsService schDocsService;
 	
-	public boolean login(String name,String password) {
-		Institute inst = instituteRepo.findNamePasswordEqulas(name, password);
+	public boolean login(String email,String password) {
+		Institute inst = instituteRepo.findEmailPasswordEqulas(email, password);
 		if(inst != null) {
 			return true;
 		}
@@ -74,7 +74,7 @@ public class InstituteService {
 			sf.setAadharNumber(stu.getAadharNumber());
 			sf.setDob(stu.getDob());
 			sf.setGender(stu.getGender());
-			sf.setEmailId(stu.getEmailId());
+			sf.setEmailId(stu.getEmail());
 			sf.setMobileNumber(stu.getMobileNumber());
 
 			sf.setScholarshipId(s.getScholarshipId());

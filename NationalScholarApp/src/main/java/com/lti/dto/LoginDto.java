@@ -2,16 +2,17 @@ package com.lti.dto;
 
 public class LoginDto {
 	
-	String name;
+	String email;
 	
 	String password;
 
-	public String getName() {
-		return name;
+	
+	public String getEmail() {
+		return email;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setEmail(String email) {
+		this.email = email;
 	}
 
 	public String getPassword() {

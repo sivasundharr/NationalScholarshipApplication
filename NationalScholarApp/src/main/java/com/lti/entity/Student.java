@@ -27,7 +27,7 @@ public class Student {
 	String dob;
 	String mobileNumber;
 	String gender;
-	String emailId;
+	String email;
 	String aadharNumber;
 	String password;
 	
@@ -91,12 +91,12 @@ public class Student {
 		this.gender = gender;
 	}
 
-	public String getEmailId() {
-		return emailId;
+	public String getEmail() {
+		return email;
 	}
 
-	public void setEmailId(String emailId) {
-		this.emailId = emailId;
+	public void setEmail(String email) {
+		this.email = email;
 	}
 
 	public String getAadharNumber() {

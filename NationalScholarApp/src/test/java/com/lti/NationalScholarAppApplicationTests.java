@@ -71,7 +71,7 @@ class NationalScholarAppApplicationTests {
 	@Order(1)
 	public void addOrUpdateInstituteTest() {
 		Institute i = new Institute();
-		i.setEmail("email");
+		i.setEmail("iemail@gmail.com");
 		i.setPassword("password");
 		i.setName("name");
 		i.setInstituteType("ordinary");
@@ -102,8 +102,8 @@ class NationalScholarAppApplicationTests {
 	@Order(3)
 	void addOrUpdateStudent() {
 		Student student = new Student();
-		student.setEmailId("email2");
-		student.setPassword("password");
+		student.setEmail("email2@gmail.com");
+		student.setPassword("1234");
 		student.setAadharNumber("aadhar");
 		student.setName("name");
 		student.setDob(LocalDate.now().toString());
@@ -357,6 +357,6 @@ class NationalScholarAppApplicationTests {
 		@Test
 		@Order(28)
 		public void loginSNO() {
-			assertTrue(stateNodalService.login("kerala", "1234"));
+			assertTrue(stateNodalService.login("kerala@gmail.com", "1234"));
 		}
 }

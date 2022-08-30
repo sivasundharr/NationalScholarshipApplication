@@ -42,6 +42,15 @@ public class StudentController {
 		 
 	}
 	
+	@GetMapping("/contact/{email}")
+	public ResponseEntity<?> searchStudentByEmail(@PathVariable("email") String email){
+		 Student student = 	studentService.searchByStudentEmail(email);
+		 if(student!=null) {
+			 return new ResponseEntity<Student>(student,HttpStatus.OK);
+		 }
+		 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	}
+	
 	@PostMapping
 	public Student addStudent(@RequestBody Student student) {
 		return studentService.createStudent(student);
@@ -49,7 +58,7 @@ public class StudentController {
 	
 	@PostMapping("/login")
 	public boolean login(@RequestBody LoginDto loginDto){
-		if(studentService.login(loginDto.getName(),loginDto.getPassword())) {
+		if(studentService.login(loginDto.getEmail(),loginDto.getPassword())) {
 			return true;
 		}
 		return false;

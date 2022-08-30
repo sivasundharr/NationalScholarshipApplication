@@ -35,8 +35,8 @@ public class StateNodalService {
 		return stateNodalRepo.save(sno);
 	}
 	
-	public boolean login(String username,String Password) {
-		StateNodal sno = stateNodalRepo.findNamePasswordEqulas(username, Password);
+	public boolean login(String email,String Password) {
+		StateNodal sno = stateNodalRepo.findEmailPasswordEqulas(email, Password);
 		if(sno != null) {
 			return true;
 		}
@@ -64,7 +64,7 @@ public class StateNodalService {
 			sf.setAadharNumber(stu.getAadharNumber());
 			sf.setDob(stu.getDob());
 			sf.setGender(stu.getGender());
-			sf.setEmailId(stu.getEmailId());
+			sf.setEmailId(stu.getEmail());
 			sf.setMobileNumber(stu.getMobileNumber());
 
 			sf.setScholarshipId(s.getScholarshipId());

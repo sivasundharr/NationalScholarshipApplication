@@ -54,7 +54,7 @@ public class MinistryService {
 			sf.setAadharNumber(stu.getAadharNumber());
 			sf.setDob(stu.getDob());
 			sf.setGender(stu.getGender());
-			sf.setEmailId(stu.getEmailId());
+			sf.setEmailId(stu.getEmail());
 			sf.setMobileNumber(stu.getMobileNumber());
 
 			sf.setScholarshipId(s.getScholarshipId());

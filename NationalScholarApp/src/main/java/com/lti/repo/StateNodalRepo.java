@@ -9,8 +9,8 @@ import com.lti.entity.StateNodal;
 
 public interface StateNodalRepo extends JpaRepository<StateNodal, Integer> {
 	
-	@Query("select st from StateNodal st where st.name=?1 and st.password=?2")
-	StateNodal findNamePasswordEqulas(String name,String password);
+	@Query("select st from StateNodal st where st.email=?1 and st.password=?2")
+	StateNodal findEmailPasswordEqulas(String email,String password);
 	
 	
 	

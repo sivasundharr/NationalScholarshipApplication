@@ -17,8 +17,8 @@ public class StudentService {
 	@Autowired
 	private InstituteService instituteService;
 	
-	public boolean login(String name,String password) {
-		Student stud = studentRepo.findNamePasswordEqulas(name, password);
+	public boolean login(String email,String password) {
+		Student stud = studentRepo.findEmailPasswordEqulas(email, password);
 		if(stud != null) {
 			return true;
 		}
@@ -27,6 +27,10 @@ public class StudentService {
 	
 	public Optional<Student> searchByStudentId(int id) {
 		return studentRepo.findById(id);
+	}
+	
+	public Student searchByStudentEmail(String email){
+		return studentRepo.findByEmail(email);
 	}
 	
 	public Student createStudent( Student student) {

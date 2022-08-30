@@ -40,7 +40,7 @@ public class InstituteController {
 	
 	@PostMapping("/login")
 	public boolean instituteLogin(@RequestBody LoginDto loginData) {
-		if(instituteService.login(loginData.getName(),loginData.getPassword())) {
+		if(instituteService.login(loginData.getEmail(),loginData.getPassword())) {
 			return true;
 		}
 		return false;

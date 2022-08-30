@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.lti.dto.LoginDto;
 import com.lti.dto.ScholarshipFormDto;
 import com.lti.dto.StateNodalLogin;
 import com.lti.entity.StateNodal;
@@ -29,8 +30,8 @@ public class StateNodalController {
 	}
 	
 	@PostMapping("/login")
-	public boolean stateNodalOfficerLogin(@RequestBody StateNodalLogin login1) {
-		if(stateNodalService.login(login1.getName(),login1.getPassword())) {
+	public boolean stateNodalOfficerLogin(@RequestBody LoginDto loginDto) {
+		if(stateNodalService.login(loginDto.getEmail(),loginDto.getPassword())) {
 			return true;
 		}
 		return false;
