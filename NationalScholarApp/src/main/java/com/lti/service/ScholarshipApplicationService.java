@@ -4,20 +4,24 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.FileCopyUtils;
 
 import com.lti.dto.DocumentsDto;
 import com.lti.dto.ScholarshipApplicationDto;
-import com.lti.entity.BankDetails;
-import com.lti.entity.DisabilityStatus;
+import com.lti.dto.ScholarshipFormDto;
 import com.lti.entity.ScholarshipApplication;
 import com.lti.entity.ScholarshipDocuments;
-import com.lti.entity.ScholarshipStatus;
+import com.lti.entity.States;
 import com.lti.entity.Student;
+import com.lti.exception.ResourceNotFoundException;
 import com.lti.repo.ScholarshipApplicationRepo;
 
 @Service
@@ -33,81 +37,84 @@ public class ScholarshipApplicationService {
 	private ScholarshipTypeService schTypeService;
 	
 	@Autowired
-	private ScholarshipStatusService statusService;
-	
-	@Autowired
-	private BankDetailsService bankDetails;
-	
-	@Autowired
 	private ScholarshipDocumentsService schDocsService;
 	
+	@Autowired 
+	private ModelMapper modelMapper;
 	
-	
-	public String applyForScholarship(ScholarshipApplicationDto sAppDto) {
+	@Transactional
+	public ScholarshipApplication applyForScholarship(ScholarshipApplicationDto sAppDto) {
+		
 		Student stud;
+//		Eligibility eligibility;
 		ScholarshipApplication schApp = new ScholarshipApplication();
-		ScholarshipStatus schStatus = new ScholarshipStatus();
-		BankDetails bank = new BankDetails();
-		try {
-			stud = studService.searchByStudentId(sAppDto.getStudentId()).get();
-		}catch(Exception e){
-			return "failure";
-		}
 		
-		try {
-			int scAppId = searchScholarshipApplicationByStudentId(sAppDto.getStudentId()).getScholarshipId();
-			schApp.setScholarshipId(scAppId);
-		}catch(Exception e) {
-			System.out.println("error for fetching application id");
-		}
+		stud = studService.getById(sAppDto.getStudent());
+		if(stud == null)
+			throw new ResourceNotFoundException("user not found");
+		var schType = schTypeService.
+				searchByScholarshipTypeId(sAppDto.getSchType()).get();
 		
-		schApp.setCaste(sAppDto.getCaste());
-		schApp.setReligion(sAppDto.getReligion());
-		schApp.setDisabilityStatus(DisabilityStatus.valueOf(sAppDto.getDisabilityStatus()));
-		schApp.setScholarshipType(schTypeService.searchByScholarshipTypeId(sAppDto.getScholarshipType()).get());
-		schApp.setDateApplied(LocalDate.now());
+		int scAppId = 
+				searchScholarshipApplicationByStudentId(stud.getStudentId())
+				.getScholarshipId();
+		if(scAppId>0)
+		schApp.setScholarshipId(scAppId);
+
+		schApp.setAddmissionFee(sAppDto.getAddmissionFee());
+		schApp.setTutionFee(sAppDto.getTutionFee());
+		schApp.setBoardName_10(sAppDto.getBoardName_10());
+		schApp.setBoardName_12(sAppDto.getBoardName_12());
+		schApp.setModeOfStudy(sAppDto.getModeOfStudy());
+		schApp.setCurrentYear(sAppDto.getCurrentYear());
+		schApp.setPassedYear_10(sAppDto.getPassedYear_10());
+		schApp.setPassedYear_12(sAppDto.getPassedYear_12());
+		schApp.setOtherFee(sAppDto.getOtherFee());
+		schApp.setPercentOfDisability(sAppDto.getPercentOfDisability());
+		schApp.setDisabled(sAppDto.isDisabled());
+		schApp.setRollNumber_10(sAppDto.getRollNumber_10());
+		schApp.setRollNumber_12(sAppDto.getRollNumber_12());
+		schApp.setPresentCourseYear(sAppDto.getPresentCourseYear());
+		schApp.setPresentCourse(sAppDto.getPresentCourse());
+		schApp.setPreviouseCourse(sAppDto.getPreviouseCourse());
+		schApp.setPreviouseCoursePer(sAppDto.getPreviouseCoursePer());
+		schApp.setStartDate(LocalDate.now());
+		schApp.setDisabilityStatus(sAppDto.getDisabilityStatus());
+		schApp.setSchType(schType);
 		schApp.setStudent(stud);
-		schApp.setAnnualIncome(sAppDto.getAnnualIncome());
-		schApp.setTenthPercentage(sAppDto.getTenthPercentage());
-		schApp.setTwelfthPercentage(sAppDto.getTwelfthPercentage());
+		schApp.setFamilyAnnualIncome(sAppDto.getFamilyAnnualIncome());
+		schApp.setPercent_10(sAppDto.getPercent_10());
+		schApp.setPercent_12(sAppDto.getPercent_12());
 		schApp.setFatherName(sAppDto.getFatherName());
 		schApp.setMotherName(sAppDto.getMotherName());
 		schApp.setFatherOccupation(sAppDto.getFatherOccupation());
 		schApp.setMotherOccupation(sAppDto.getMotherOccupation());
-		schApp.setFatherAadhaarNo(sAppDto.getFatherAadhaarNo());
-		schApp.setMotherAadhaarNo(sAppDto.getMotherAadhaarNo());
-		
-		try {
-			int bankId = bankDetails.serachBankDetailsByStudentId(sAppDto.getStudentId()).getBankDetailsId();
-			bank.setBankDetailsId(bankId);
-		}catch(Exception e) {
-			
-		}
-		bank.setAccountNo(sAppDto.getAccountNo());
-		bank.setHolderName(sAppDto.getHolderName());
-		bank.setIfscCode(sAppDto.getIfscCode());
-		bank.setStudent(stud);
-		
-		try {
-			bankDetails.addBankDetails(bank);
-			System.out.println(schApp);
-			ScholarshipApplication sa = addScholarshipForm(schApp);
-			
-			try {
-			int statusId = statusService.getScholarshipStatusBySchApplicationId(
-			searchScholarshipApplicationByStudentId(sAppDto.getStudentId()).getScholarshipId()).getApplicationStatusId();
-			schStatus.setApplicationStatusId(statusId);
-			}catch(Exception e) {
-				
-			}
-			schStatus.setScholarshipApplication(sa);
-			statusService.addScholarshipStatus(schStatus);
-			
-			return "Success";
-		}catch(Exception e) {
-			return "Unsuccessful";
-		}
+		ScholarshipApplication sa = scholarRepo.save(schApp);	
+		return sa;	
 	}
+	
+	public ScholarshipFormDto convertToFullScholarshipDto(ScholarshipApplication s) {
+		TypeMap<ScholarshipApplication,ScholarshipApplicationDto> typeMap=
+			modelMapper.getTypeMap(ScholarshipApplication.class,
+					ScholarshipApplicationDto.class);
+		if(typeMap==null) {
+		
+			typeMap = modelMapper.createTypeMap(ScholarshipApplication.class,
+					ScholarshipApplicationDto.class);
+			
+			typeMap.addMappings(m->m.map(src->{
+				return studService.convertToStudentDto(src.getStudent());
+				},ScholarshipApplicationDto::setStudentDto));
+			
+			typeMap.addMappings(m->m.map(src->src.getScholarshipDocuments(),
+					ScholarshipApplicationDto::setScholarshipDocuments));
+			typeMap.addMappings(m->m.map(src->src.getSchType()
+					,ScholarshipApplicationDto::setScholarshipType));
+	
+		}
+			
+			return modelMapper.map(s, ScholarshipFormDto.class);
+		}
 	
 	public String uploadDocuments(DocumentsDto docDto) {
 		ScholarshipDocuments scholarDocs = new ScholarshipDocuments();
@@ -122,15 +129,7 @@ public class ScholarshipApplicationService {
 		} catch (Exception e){
 			//new entry if error
 		}
-		scholarDocs.setAadharCard(docDto.getAadharCard().getOriginalFilename());
-		scholarDocs.setCasteOrIncomeCertificate(docDto.getCasteOrIncomeCertificate().getOriginalFilename());
-		scholarDocs.setDomecile(docDto.getDomecile().getOriginalFilename());
-		scholarDocs.setFeeReciept(docDto.getFeeReciept().getOriginalFilename());
-		scholarDocs.setTenthMarksheet(docDto.getTenthMarksheet().getOriginalFilename());
-		scholarDocs.setTwelfthMarksheet(docDto.getTwelfthMarksheet().getOriginalFilename());
-		scholarDocs.setIdCard(docDto.getIdCard().getOriginalFilename());
-		scholarDocs.setPassBook(docDto.getPassBook().getOriginalFilename());
-		scholarDocs.setPhoto(docDto.getPhoto().getOriginalFilename());
+		scholarDocs.setStudentRecord(docDto.getStudentRecord().getOriginalFilename());
 		scholarDocs.setScholarship(sApp);
 		
 		String imageUploadLocation = "C:/Users/Sivasundhar R/Documents/Nsp_files/uploads/"+docDto.getScholarshipId()+"/";
@@ -138,26 +137,10 @@ public class ScholarshipApplicationService {
 		if (!f.exists()) {
 			f.mkdir();
 		}
-		String tAadharCard = imageUploadLocation + docDto.getAadharCard().getOriginalFilename();
-		String tTenthMarksheet = imageUploadLocation + docDto.getTenthMarksheet().getOriginalFilename();
-		String tTwelfthMarksheet = imageUploadLocation + docDto.getTwelfthMarksheet().getOriginalFilename();
-		String tPhoto = imageUploadLocation + docDto.getPhoto().getOriginalFilename();
-		String tIdCard = imageUploadLocation + docDto.getIdCard().getOriginalFilename();
-		String tCasteOrIncomeCertificate = imageUploadLocation + docDto.getCasteOrIncomeCertificate().getOriginalFilename();
-		String tFeeReciept = imageUploadLocation + docDto.getFeeReciept().getOriginalFilename();
-		String tPassBook = imageUploadLocation + docDto.getPassBook().getOriginalFilename();
-		String tDomecile = imageUploadLocation + docDto.getDomecile().getOriginalFilename();
+		String tAadharCard = imageUploadLocation + docDto.getStudentRecord().getOriginalFilename();
 
 		try {
-            FileCopyUtils.copy(docDto.getAadharCard().getInputStream(), new FileOutputStream(tAadharCard));
-            FileCopyUtils.copy(docDto.getTenthMarksheet().getInputStream(), new FileOutputStream(tTenthMarksheet));
-            FileCopyUtils.copy(docDto.getTwelfthMarksheet().getInputStream(), new FileOutputStream(tTwelfthMarksheet));
-            FileCopyUtils.copy(docDto.getPhoto().getInputStream(), new FileOutputStream(tPhoto));
-            FileCopyUtils.copy(docDto.getIdCard().getInputStream(), new FileOutputStream(tIdCard));
-            FileCopyUtils.copy(docDto.getCasteOrIncomeCertificate().getInputStream(), new FileOutputStream(tCasteOrIncomeCertificate));
-            FileCopyUtils.copy(docDto.getFeeReciept().getInputStream(), new FileOutputStream(tFeeReciept));
-            FileCopyUtils.copy(docDto.getPassBook().getInputStream(), new FileOutputStream(tDomecile));
-            FileCopyUtils.copy(docDto.getDomecile().getInputStream(), new FileOutputStream(tPassBook));
+            FileCopyUtils.copy(docDto.getStudentRecord().getInputStream(), new FileOutputStream(tAadharCard));
         } catch (IOException e) {
             e.printStackTrace();
             return e.getMessage();
@@ -170,35 +153,35 @@ public class ScholarshipApplicationService {
 		}
 	}
 	
-	public ScholarshipApplication addScholarshipForm(ScholarshipApplication scholarapp) {
-		System.out.println("inside add form");
-		return scholarRepo.save(scholarapp);
-	}
 	
 	public ScholarshipApplication searchScholarshipApplicationById(Integer applicationId) {
 		return scholarRepo.findById(applicationId).get();
 	}
 	
-	public List<ScholarshipApplication> getAllApplications(){
-		return scholarRepo.findAll();
-	}
-
 	public ScholarshipApplication searchScholarshipApplicationByStudentId(Integer studentId) {
 		return scholarRepo.findApplicationByStudentId(studentId);
 	}
-
-	public ScholarshipApplication searchScholarshipApplicationByStudentIdAndType(int studentId, int scholarshipId){
-		return scholarRepo.findScholarshipByStudentIdAndType(studentId,scholarshipId);
+	
+	public Set<ScholarshipFormDto> viewAllScholarshipApplicationsByInstitutionCode(String institutionCode){
+		return scholarRepo.getScholarshipApplicationsByInstitutionCode(institutionCode)
+				.stream()
+				.map(this::convertToFullScholarshipDto)
+				.collect(Collectors.toSet());
+	}
+	public Set<ScholarshipFormDto> viewAllScholarshipApplicationsByState(String str){
+		States state = States.valueOf(str);
+		return scholarRepo.getScholarshipApplicationsByState(state)
+				.stream()
+				.map(this::convertToFullScholarshipDto)
+				.collect(Collectors.toSet());
+	}
+	public Set<ScholarshipFormDto> viewAllScholarshipApplicationsByMinistry(){
+		return scholarRepo.getScholarshipApplicationsByMinistry()
+				.stream()
+				.map(this::convertToFullScholarshipDto)
+				.collect(Collectors.toSet());
 	}
 	
-	public List<ScholarshipApplication> viewAllScholarshipApplicationsByInstituteId(int instituteId){
-		return scholarRepo.getAllScholarshipApplicationsByInstituteId(instituteId);
-	}
-	public List<ScholarshipApplication> viewAllScholarshipApplicationsForSo(){
-		return scholarRepo.getllScholarshipApplicationsForSNO();
-	}
-	public List<ScholarshipApplication> viewAllScholarshipApplicationsForMinistry(){
-		return scholarRepo.getllScholarshipApplicationsForMinistry();
-	}
 
 }
+ 

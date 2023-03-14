@@ -2,11 +2,11 @@ package com.lti.dto;
 
 public class ApproveDto {
 	
-	int approver;
+	private int approver;
 	
-	int scholarshipId;
+	private int scholarshipId;
 	
-	boolean approved;
+	private boolean approved;
 
 	public int getApprover() {
 		return approver;

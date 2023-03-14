@@ -1,7 +1,9 @@
 package com.lti.controllers;
 
-import java.util.List;
-import java.util.Optional;
+import java.net.URI;
+import java.util.Set;
+
+import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,10 +16,13 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.lti.dto.InstituteDto;
 import com.lti.dto.LoginDto;
-import com.lti.dto.ScholarshipFormDto;
-import com.lti.entity.Institute;
+import com.lti.dto.LoginResponseDto;
+import com.lti.exception.ResourceNotFoundException;
 import com.lti.service.InstituteService;
 
 @RestController
@@ -28,54 +33,80 @@ public class InstituteController {
 	@Autowired
 	public InstituteService instituteService;
 	
-	@GetMapping
-	public List<Institute> getAllInstitutes(){
-		return instituteService.findAllInstitutes();
-	}
-	
 	@PostMapping
-	public Institute addInstitute(@RequestBody Institute institute) {
-		return instituteService.addInstitute(institute);
+	public ResponseEntity<?> createInstitute(@Valid @RequestBody InstituteDto instituteDto) {
+		InstituteDto inst = instituteService.addInstitute(instituteDto);
+		if (inst != null) {
+			URI uri = ServletUriComponentsBuilder
+					.fromCurrentContextPath().path("//institute/{id}")
+					.buildAndExpand(inst.getInstitutionCode()).toUri();
+			return ResponseEntity.created(uri).build();
+		}
+			
+		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 	}
 	
 	@PostMapping("/login")
-	public boolean instituteLogin(@RequestBody LoginDto loginData) {
-		if(instituteService.login(loginData.getEmail(),loginData.getPassword())) {
-			return true;
+	public ResponseEntity<?> instituteLogin(@Valid @RequestBody LoginDto loginData) {
+		InstituteDto institute = instituteService.login(loginData.getUserName(), loginData.getPassword());
+		if (institute == null) {
+			throw new ResourceNotFoundException("Invalid UserName or Password");
 		}
-		return false;
+			LoginResponseDto loginResponse = new LoginResponseDto();
+
+			loginResponse.setId(1);
+			loginResponse.setName(institute.getInstitutionName());
+
+			return new ResponseEntity<LoginResponseDto>(loginResponse, HttpStatus.OK);
 	}
 	
-	@PutMapping("/{instituteId}")
-	public Institute updateInstitute(@RequestBody Institute institute,
-			@PathVariable("instituteId") int instituteId) {
-		institute.setInstituteId(instituteId);
-		return instituteService.addInstitute(institute);
+	@PutMapping("/{institutionCode}")
+	public InstituteDto updateInstitute(@RequestBody InstituteDto instituteDto,
+			@PathVariable("instituteId") String institutionCode) {
+		instituteDto.setInstitutionCode(institutionCode);
+		return instituteService.addInstitute(instituteDto);
 	}
-	
-	@PutMapping("approve/{instituteId}")
-	public Institute updateInstituteApproval(@RequestBody Institute institute,
-			@PathVariable("instituteId") int instituteId) {
-		institute.setInstituteId(instituteId);
-		institute.setApprovalStatus(true);
-		return instituteService.addInstitute(institute);
-	}
-	
 	
 	@GetMapping("/{id}")
-	public ResponseEntity<?> findInstituteById(@PathVariable("id") int id) {
-		Optional<Institute> institute =  instituteService.findById(id);
-		if(institute.isPresent()) {
-			return new ResponseEntity<Institute>(institute.get(),HttpStatus.OK);
-		}
-		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	public ResponseEntity<?> findInstitutionById(@PathVariable("id") int id) {
+		InstituteDto institute = instituteService.findById(id);
+		if (institute == null)
+			throw new ResourceNotFoundException("Institute Not Found");
+		return new ResponseEntity<>(institute, HttpStatus.OK);
 	}
 	
-	@GetMapping("/viewApplications/{instituteId}")
-	public List<ScholarshipFormDto> viewAllScholarshipApplicationsByInstituteId(
-			@PathVariable("instituteId") int instituteId){
-		return instituteService.viewAllScholarshipForms(instituteId);
+	@GetMapping("/i/{InstituteCode}")
+	public ResponseEntity<?> findInstitutionCode(@PathVariable("InstituteCode") String id) {
+		InstituteDto institute = instituteService.findByInstituteCode(id);
+		if (institute == null)
+			throw new ResourceNotFoundException("Institute Not Found");
+		return new ResponseEntity<>(institute, HttpStatus.OK);
 	}
-
-
+	
+	
+	@GetMapping("/state/{state}")
+	public ResponseEntity<?> InstitutesByState(@PathVariable String state){
+		Set<InstituteDto> institutes;
+		try {
+		institutes = instituteService
+				.findByInstitutesWaitingForStateApproval(state);
+		}catch(IllegalArgumentException ex) {
+			throw new ResponseStatusException(
+				HttpStatus.NOT_FOUND,"State doesn't exist",ex);
+		}
+		return new ResponseEntity<>(institutes,HttpStatus.OK);
+	}
+	
+	@GetMapping("/ministry/")
+	public ResponseEntity<?> InstitutesByMinistry(){
+		Set<InstituteDto> institutes;
+		try {
+		institutes = instituteService
+				.findByInstitutesWaitingForMinistryApproval();
+		}catch(IllegalArgumentException ex) {
+			throw new ResponseStatusException(
+				HttpStatus.INTERNAL_SERVER_ERROR,"something wrong",ex);
+		}
+		return new ResponseEntity<>(institutes,HttpStatus.OK);
+	}
 }

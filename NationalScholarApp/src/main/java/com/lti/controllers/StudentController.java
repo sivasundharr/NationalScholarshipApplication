@@ -1,8 +1,9 @@
 package com.lti.controllers;
 
-import java.util.Optional;
+import java.net.URI;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import javax.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -13,68 +14,71 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.lti.dto.LoginDto;
-import com.lti.entity.ScholarshipStatus;
-import com.lti.entity.Student;
-import com.lti.service.ScholarshipStatusService;
+import com.lti.dto.LoginResponseDto;
+import com.lti.dto.StudentDto;
+import com.lti.exception.ResourceNotFoundException;
 import com.lti.service.StudentService;
 
 @RestController
 @CrossOrigin("http://localhost:4200/")
 @RequestMapping("/student")
 public class StudentController {
-	
-	@Autowired
+
 	private StudentService studentService;
 	
-	@Autowired
-	private ScholarshipStatusService schStatusService;
-	
+	public StudentController(StudentService studentService){
+		this.studentService = studentService;
+	}
+
 	@GetMapping("/{id}")
 	public ResponseEntity<?> searchByStudentId(@PathVariable("id") int id) {
-		
-		 Optional<Student> student = 	studentService.searchByStudentId(id);
-		 if(student.isPresent()) {
-			 return new ResponseEntity<Student>(student.get(),HttpStatus.OK);
-		 }
-		 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		 
+
+		var student = studentService.searchByStudentId(id);
+		if (student == null) {
+
+			throw new ResourceNotFoundException("student not found : " + id);
+
+		}
+		return new ResponseEntity<>(student, HttpStatus.ACCEPTED);
+
 	}
-	
-	@GetMapping("/contact/{email}")
-	public ResponseEntity<?> searchStudentByEmail(@PathVariable("email") String email){
-		 Student student = 	studentService.searchByStudentEmail(email);
-		 if(student!=null) {
-			 return new ResponseEntity<Student>(student,HttpStatus.OK);
-		 }
-		 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-	}
-	
+
+
 	@PostMapping
-	public Student addStudent(@RequestBody Student student) {
-		return studentService.createStudent(student);
+	public ResponseEntity<?> createStudent(@Valid @RequestBody StudentDto.StudentOnly student) {
+		StudentDto.StudentOnly newStudent = studentService.createStudent(student);
+		if (newStudent != null) {
+			URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+					.buildAndExpand(newStudent.getStudentId()).toUri();
+
+			return ResponseEntity.created(uri).build();
+		}
+
+		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 	}
-	
+
 	@PostMapping("/login")
-	public boolean login(@RequestBody LoginDto loginDto){
-		if(studentService.login(loginDto.getEmail(),loginDto.getPassword())) {
-			return true;
+	public ResponseEntity<?> login(@Valid @RequestBody LoginDto loginDto) {
+		StudentDto.StudentOnly newStudent = studentService.login(loginDto.getUserName(), loginDto.getPassword());
+		if (newStudent != null) {
+			LoginResponseDto loginResponse = new LoginResponseDto();
+
+			loginResponse.setId(newStudent.getStudentId());
+			loginResponse.setName(newStudent.getStudentName());
+
+			return new ResponseEntity<LoginResponseDto>(loginResponse, HttpStatus.OK);
 		}
-		return false;
+
+		return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 	}
-	
-	@GetMapping("/application/{studentId}")
-	public ResponseEntity<?> showScholarshipStatusByStudentId(int studentId) {
-		ScholarshipStatus Ss =  schStatusService.getScholarshipStatusByStudentId(studentId);
-		if(Ss!=null) {
-			return new ResponseEntity<ScholarshipStatus>(Ss,HttpStatus.OK);
-		}
-		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-	}
-	
+
+
 	@PutMapping("/{id}")
-	public Student updateStudent(@PathVariable int id,@RequestBody Student student) {
-		return studentService.updateStudent(id,student);
+	public StudentDto.StudentOnly updateStudent(@PathVariable int id, 
+			@Valid @RequestBody StudentDto.StudentOnly studentDto) {
+		return studentService.updateStudent(id, studentDto);
 	}
 }

@@ -4,6 +4,7 @@ public enum DisabilityStatus {
 	
 	BLINDORLOWVISION,
 	LEARNINGDISABILITY,
+	HEARINGPROBLEM,
 	NONE
 
 }

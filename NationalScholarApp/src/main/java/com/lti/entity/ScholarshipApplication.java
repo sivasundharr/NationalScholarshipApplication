@@ -2,214 +2,92 @@ package com.lti.entity;
 
 import java.time.LocalDate;
 
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
+import javax.persistence.PrimaryKeyJoinColumn;
+import javax.persistence.SecondaryTable;
 import javax.persistence.SequenceGenerator;
+import javax.validation.constraints.NotEmpty;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+@ToString
+@Getter
+@Setter
 @Entity
-public class ScholarshipApplication {
+@SecondaryTable(name="scholarship_status",pkJoinColumns=
+@PrimaryKeyJoinColumn(name="sch_status_id"
+,referencedColumnName="scholarship_id"))
+@AttributeOverrides({
+@AttributeOverride(name="createdAt",column=@Column(table="scholarship_status")),
+@AttributeOverride(name="updatedAt",column=@Column(table="scholarship_status")),
+@AttributeOverride(name="approvedByInstitute",column=@Column(columnDefinition = "integer default 0",table="scholarship_status")),
+@AttributeOverride(name="approvedByState",column=@Column(columnDefinition = "integer default 0",table="scholarship_status")),
+@AttributeOverride(name="approvedByMinistry",column=@Column(columnDefinition = "integer default 0",table="scholarship_status"))
+})
+public class ScholarshipApplication extends ScholarshipStatus {
 	
 	@Id
 	@GeneratedValue(generator = "scholarship_seq", strategy = GenerationType.SEQUENCE)
 	@SequenceGenerator(name = "scholarship_seq", initialValue = 12500, allocationSize = 1)
-	int scholarshipId;
-
-	String caste;
-	String religion;
-	LocalDate dateApplied;
-	double tenthPercentage;
-	double twelfthPercentage;
-	String fatherName;
-	String motherName;
-	String fatherOccupation;
-	String motherOccupation;
-	double annualIncome;
-	String fatherAadhaarNo;
-	String motherAadhaarNo;
-	
+	@Column(name="scholarship_id")
+	private int scholarshipId;
+	@NotEmpty
+	private String fatherName;
+	private String motherName;
+	private String fatherOccupation;
+	private String motherOccupation;
+	@Column(nullable=false)
+	private double familyAnnualIncome;
+	@NotEmpty
+	private String presentCourse;
+	private String presentCourseYear;
+	private String modeOfStudy;
+	private LocalDate startDate;
+	private String previouseCourse;
+	private int currentYear;
+	private double previouseCoursePer;
+	private String rollNumber_10;
+	private String boardName_10;
+	private int passedYear_10;
+	private double percent_10;
+	private String rollNumber_12;
+	private String boardName_12;
+	private int passedYear_12;
+	private double percent_12;
+	private double addmissionFee;
+	private double tutionFee;
+	private double otherFee;
+	private boolean isDisabled;
 	@Enumerated(EnumType.STRING)
-	DisabilityStatus disabilityStatus = DisabilityStatus.NONE;
-
-	@JsonIgnore
-	@ManyToOne
-	@JoinColumn(name = "scholarshipType")
-	ScholarshipType scholarshipType;
-	@JsonIgnore
-	@OneToOne(mappedBy = "scholarship", cascade = CascadeType.ALL)
-	ScholarshipDocuments scholarshipDocuments;
-	@JsonIgnore
-	@OneToOne(mappedBy = "scholarshipApplication",cascade = CascadeType.ALL)
-	ScholarshipStatus scholarshipStatus;
-	@JsonIgnore
-	@ManyToOne
+	private DisabilityStatus disabilityStatus;
+	private double percentOfDisability;
+	
+	@ManyToOne(cascade = CascadeType.ALL,fetch=FetchType.LAZY,optional=false)
+	@JoinColumn(name = "scholarshipTypeId")
+	private ScholarshipType schType;
+	@OneToOne(mappedBy = "scholarship")
+	private ScholarshipDocuments scholarshipDocuments;
+	
+	@JsonBackReference
+	@ManyToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "studentId")
-	Student student;
-
-	public int getScholarshipId() {
-		return scholarshipId;
-	}
-
-	public void setScholarshipId(int scholarshipId) {
-		this.scholarshipId = scholarshipId;
-	}
-
-	public String getCaste() {
-		return caste;
-	}
-
-	public void setCaste(String caste) {
-		this.caste = caste;
-	}
-
-	public String getReligion() {
-		return religion;
-	}
-
-	public void setReligion(String religion) {
-		this.religion = religion;
-	}
-
-	public LocalDate getDateApplied() {
-		return dateApplied;
-	}
-
-	public void setDateApplied(LocalDate dateApplied) {
-		this.dateApplied = dateApplied;
-	}
-
-	public ScholarshipType getScholarshipType() {
-		return scholarshipType;
-	}
-
-	public void setScholarshipType(ScholarshipType scholarshipType) {
-		this.scholarshipType = scholarshipType;
-	}
-
-	public double getTenthPercentage() {
-		return tenthPercentage;
-	}
-
-	public void setTenthPercentage(double tenthPercentage) {
-		this.tenthPercentage = tenthPercentage;
-	}
-
-	public double getTwelfthPercentage() {
-		return twelfthPercentage;
-	}
-
-	public void setTwelfthPercentage(double twelfthPercentage) {
-		this.twelfthPercentage = twelfthPercentage;
-	}
-
-	public String getFatherName() {
-		return fatherName;
-	}
-
-	public void setFatherName(String fatherName) {
-		this.fatherName = fatherName;	}
-
-	public String getMotherName() {
-		return motherName;
-	}
-
-	public void setMotherName(String motherName) {
-		this.motherName = motherName;
-	}
-
-	public String getFatherOccupation() {
-		return fatherOccupation;
-	}
-
-	public void setFatherOccupation(String fatherOccupation) {
-		this.fatherOccupation = fatherOccupation;
-	}
-
-	public String getMotherOccupation() {
-		return motherOccupation;
-	}
-
-	public void setMotherOccupation(String motherOccupation) {
-		this.motherOccupation = motherOccupation;
-	}
-
-	public double getAnnualIncome() {
-		return annualIncome;
-	}
-
-	public void setAnnualIncome(double annualIncome) {
-		this.annualIncome = annualIncome;
-	}
-
-	public String getFatherAadhaarNo() {
-		return fatherAadhaarNo;
-	}
-
-	public void setFatherAadhaarNo(String fatherAadhaarNo) {
-		this.fatherAadhaarNo = fatherAadhaarNo;
-	}
-
-	public String getMotherAadhaarNo() {
-		return motherAadhaarNo;
-	}
-
-	public void setMotherAadhaarNo(String motherAadhaarNo) {
-		this.motherAadhaarNo = motherAadhaarNo;
-	}
-
-	public ScholarshipDocuments getScholarshipDocuments() {
-		return scholarshipDocuments;
-	}
-
-	public void setScholarshipDocuments(ScholarshipDocuments scholarshipDocuments) {
-		this.scholarshipDocuments = scholarshipDocuments;
-	}
-
-	public Student getStudent() {
-		return student;
-	}
-
-	public void setStudent(Student student) {
-		this.student = student;
-	}
-
-	public DisabilityStatus getDisabilityStatus() {
-		return disabilityStatus;
-	}
-
-	public void setDisabilityStatus(DisabilityStatus disabilityStatus) {
-		this.disabilityStatus = disabilityStatus;
-	}
-
-	public ScholarshipStatus getScholarshipStatus() {
-		return scholarshipStatus;
-	}
-
-	public void setScholarshipStatus(ScholarshipStatus scholarshipStatus) {
-		this.scholarshipStatus = scholarshipStatus;
-	}
-
-	@Override
-	public String toString() {
-		return "ScholarshipApplication [scholarshipId=" + scholarshipId + ", caste=" + caste + ", religion=" + religion
-				+ ", dateApplied=" + dateApplied + ", tenthPercentage=" + tenthPercentage + ", twelfthPercentage="
-				+ twelfthPercentage + ", fatherName=" + fatherName + ", motherName=" + motherName
-				+ ", fatherOccupation=" + fatherOccupation + ", motherOccupation=" + motherOccupation
-				+ ", annualIncome=" + annualIncome + ", fatherAadhaarNo=" + fatherAadhaarNo + ", motherAadhaarNo="
-				+ motherAadhaarNo + ", disabilityStatus=" + disabilityStatus + ", scholarshipType=" + scholarshipType
-				+ ", scholarshipDocuments=" + scholarshipDocuments + ", scholarshipStatus=" + scholarshipStatus
-				+ ", student=" + student + "]";
-	}
-	
-	
-
+	private Student student;
 }
